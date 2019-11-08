@@ -1,11 +1,18 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <windows.h>
 
-LPSTR wndcls = "Klasa Okienka";
+#define BTN_ID 1
+#define BTN2_ID 2
+#define CHECKBOX_ID 3
+
+LPSTR wndcls = "WindowClass";
 MSG wndmsg;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-HWND btn, checkbox, textfield, listbox, combobox;
+HWND
+  btn, btn2, checkbox, textfield, listbox, combobox,
+  static_, static_icon;
 
 int WINAPI WinMain(
   HINSTANCE hInstance,
@@ -16,7 +23,7 @@ int WINAPI WinMain(
 {
   WNDCLASSEX wc = {
     .cbSize = sizeof( WNDCLASSEX ),
-    .style = 0,
+    .style = CS_DBLCLKS,
     .lpfnWndProc = WndProc,
     .cbClsExtra = 0,
     .cbWndExtra = 0,
@@ -62,7 +69,7 @@ int WINAPI WinMain(
     WS_CHILD | WS_VISIBLE,
     10, 10,
     200, 30,
-    hwnd, NULL, hInstance, NULL
+    hwnd, (HMENU) BTN_ID, hInstance, NULL
   );
 
   checkbox = CreateWindowEx(
@@ -72,7 +79,7 @@ int WINAPI WinMain(
     WS_CHILD | WS_VISIBLE | BS_CHECKBOX,
     10, 50,
     200, 30,
-    hwnd, NULL, hInstance, NULL
+    hwnd, (HMENU) CHECKBOX_ID, hInstance, NULL
   );
 
   textfield = CreateWindowEx(
@@ -83,6 +90,48 @@ int WINAPI WinMain(
     10, 90,
     200, 24,
     hwnd, NULL, hInstance, NULL
+  );
+
+  SetWindowText(textfield, "This is a text field");
+
+  static_ = CreateWindowEx(
+    0,
+    "STATIC",
+    NULL,
+    WS_CHILD | WS_VISIBLE | SS_LEFT,
+    10, 130,
+    200, 36,
+    hwnd, NULL, hInstance, NULL
+  );
+
+  SetWindowText(static_, "This is a static label\n"
+    "and below is an icon");
+
+  static_icon = CreateWindowEx(
+    0,
+    "STATIC",
+    NULL,
+    WS_CHILD | WS_VISIBLE | SS_ICON,
+    10, 170,
+    48, 48,
+    hwnd, NULL, hInstance, NULL
+  );
+
+  SendMessage(
+    static_icon,
+    STM_SETICON,
+    (WPARAM) LoadIcon(NULL, IDI_APPLICATION),
+    0
+  );
+
+  btn2 = CreateWindowEx(
+    0,
+    "BUTTON",
+    "Click me!",
+    WS_CHILD | WS_VISIBLE,
+    10, 204,
+    200, 30,
+    hwnd, (HMENU) BTN2_ID, hInstance, NULL
   );
 
   listbox = CreateWindowEx(
@@ -104,7 +153,8 @@ int WINAPI WinMain(
     WS_EX_CLIENTEDGE,
     "COMBOBOX",
     NULL,
-    WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWN,
+    // DROPDOWN = editable, DROPDOWNLIST = not editable
+    WS_CHILD | WS_VISIBLE | WS_BORDER | CBS_DROPDOWNLIST,
     220, 210,
     200, 200,
     hwnd, NULL, hInstance, NULL
@@ -112,6 +162,17 @@ int WINAPI WinMain(
 
   SendMessage(combobox, CB_ADDSTRING, 0, (LPARAM) "Hello");
   SendMessage(combobox, CB_ADDSTRING, 0, (LPARAM) "World");
+  SendMessage(combobox, CB_SETCURSEL, 0, 0);
+
+  HFONT font = (HFONT) GetStockObject(DEFAULT_GUI_FONT);
+
+  SendMessage(btn, WM_SETFONT, (WPARAM) font, 0);
+  SendMessage(btn2, WM_SETFONT, (WPARAM) font, 0);
+  SendMessage(checkbox, WM_SETFONT, (WPARAM) font, 0);
+  SendMessage(textfield, WM_SETFONT, (WPARAM) font, 0);
+  SendMessage(static_, WM_SETFONT, (WPARAM) font, 0);
+  SendMessage(listbox, WM_SETFONT, (WPARAM) font, 0);
+  SendMessage(combobox, WM_SETFONT, (WPARAM) font, 0);
    
   if (!hwnd)
   {
@@ -150,14 +211,42 @@ LRESULT CALLBACK WndProc(
         break;
 
       case WM_COMMAND:
-        if ((HWND) lParam == btn)
+        switch (wParam)
         {
-          MessageBox(
-            NULL,
-            "A command\n",
-            "",
-            MB_ICONEXCLAMATION | MB_OK);
+          case BTN_ID:
+            MessageBox(
+              NULL,
+              "A command\nand a new line",
+              "",
+              MB_ICONEXCLAMATION | MB_OK
+            );
+            break;
+
+          case BTN2_ID:
+            MessageBox(
+              NULL,
+              "Wow, you clicked me!",
+              "Wow",
+              MB_ICONEXCLAMATION | MB_OK
+            );
+            break;
+
+          case CHECKBOX_ID:
+            if (IsDlgButtonChecked(hwnd, CHECKBOX_ID) == BST_CHECKED)
+              CheckDlgButton(hwnd, CHECKBOX_ID, BST_UNCHECKED);
+            else
+              CheckDlgButton(hwnd, CHECKBOX_ID, BST_CHECKED);
+            break;
         }
+        break;
+
+      case WM_LBUTTONDBLCLK:
+        MessageBox(
+          NULL,
+          "Hey, you, double-clicker.",
+          "Message",
+          MB_ICONEXCLAMATION | MB_OK
+        );
         break;
        
       default:
